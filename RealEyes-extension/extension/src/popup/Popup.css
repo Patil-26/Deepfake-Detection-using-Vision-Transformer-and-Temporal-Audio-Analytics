@@ -1,0 +1,37 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    font-family: 'Inter', system-ui, sans-serif;
+    background: #0a0a0f;
+    width: 380px;
+    overflow: hidden;
+  }
+}
+
+@layer utilities {
+  .animate-pulse-dot {
+    animation: pulseDot 1.5s ease-in-out infinite;
+  }
+  @keyframes pulseDot {
+    0%, 100% { opacity: 1; }
+    50%       { opacity: 0.35; }
+  }
+
+  @keyframes slideIn {
+    from { opacity: 0; transform: translateY(6px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  .scanner-item {
+    opacity: 0;
+    animation: slideIn 0.5s ease forwards;
+  }
+  .scanner-item:nth-child(1) { animation-delay: 0.05s; }
+  .scanner-item:nth-child(2) { animation-delay: 0.15s; }
+  .scanner-item:nth-child(3) { animation-delay: 0.25s; }
+}

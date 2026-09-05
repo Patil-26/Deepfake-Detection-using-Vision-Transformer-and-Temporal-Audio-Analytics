@@ -1,0 +1,381 @@
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap');
+
+#deepguard-panel {
+  position: fixed;
+  z-index: 2147483647;
+  width: 300px;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 14px;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.12), 0 2px 8px rgba(42,126,251,0.08);
+  font-family: 'Poppins', -apple-system, sans-serif;
+  font-size: 13px;
+  color: #1e293b;
+  overflow: hidden;
+  animation: dg-slideIn 0.28s cubic-bezier(0.34, 1.56, 0.64, 1);
+  user-select: none;
+}
+
+#deepguard-panel.dragging { transition: none; }
+
+@keyframes dg-slideIn {
+  from { opacity: 0; transform: scale(0.88) translateY(10px); }
+  to   { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+/* ── Header ── */
+.dg-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 11px 13px 10px;
+  background: #ffffff;
+}
+
+.dg-header-left {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.dg-logo {
+  width: 24px;
+  height: 24px;
+  flex-shrink: 0;
+}
+.dg-logo img { width: 24px; height: 24px; display: block; }
+
+.dg-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: #2A7EFB;
+  letter-spacing: -0.2px;
+}
+
+.dg-subtitle {
+  font-size: 9px;
+  color: #94a3b8;
+  font-weight: 500;
+  letter-spacing: 0px;
+  margin-top: -1px;
+}
+
+.dg-close {
+  width: 24px;
+  height: 24px;
+  color: #94a3b8;
+  cursor: pointer;
+  border: none;
+  background: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 15px;
+  transition: color 0.15s;
+  line-height: 1;
+  padding: 0;
+}
+.dg-close:hover { color: #ef4444; }
+
+/* ── Body ── */
+.dg-body { padding: 14px 13px; }
+
+/* ══════════════════════════════════════════
+   ── LOADING UI ──
+   Orbital ring with a comet tail effect
+══════════════════════════════════════════ */
+.dg-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 10px 0 14px;
+}
+
+.dg-orbital {
+  position: relative;
+  width: 160px;
+  height: 160px;
+}
+
+.dg-orbital-svg {
+  width: 160px;
+  height: 160px;
+  animation: dg-orbit 1.4s linear infinite;
+}
+@keyframes dg-orbit { to { transform: rotate(360deg); } }
+
+.dg-orbital-track {
+  fill: none;
+  stroke: #dbeafe;
+  stroke-width: 9;
+}
+
+.dg-orbital-comet {
+  fill: none;
+  stroke: url(#dg-comet-grad);
+  stroke-width: 9;
+  stroke-linecap: round;
+}
+
+.dg-orbital-center {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.dg-orbital-label {
+  font-size: 15px;
+  font-weight: 600;
+  color: #475569;
+  letter-spacing: -0.2px;
+}
+
+/* ══════════════════════════════════════════
+   ── SCORE RING ──
+   Transitions are applied by JS after paint
+   so animation is always consistent.
+══════════════════════════════════════════ */
+.dg-score-wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 13px;
+}
+
+.dg-ring-container {
+  position: relative;
+  width: 120px;
+  height: 120px;
+  flex-shrink: 0;
+}
+
+.dg-ring-svg {
+  width: 120px;
+  height: 120px;
+  transform: rotate(-90deg);
+  display: block;
+}
+
+.dg-ring-track {
+  fill: none;
+  stroke: #f1f5f9;
+  stroke-width: 8;
+}
+
+.dg-ring-fill {
+  fill: none;
+  stroke-width: 8;
+  stroke-linecap: round;
+  /* NO transition here — set by JS after first paint */
+}
+
+.dg-ring-label {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1px;
+}
+
+.dg-ring-score {
+  font-size: 26px;
+  font-weight: 800;
+  letter-spacing: -1px;
+  line-height: 1;
+}
+
+.dg-ring-pct {
+  font-size: 10px;
+  color: #94a3b8;
+  font-weight: 500;
+}
+
+.dg-score-meta {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.dg-verdict {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 12px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.3px;
+}
+
+.dg-verdict.fake {
+  background: #fee2e2;
+  border: 1px solid #fca5a5;
+  color: #ef4444;
+}
+
+.dg-verdict.real {
+  background: #dcfce7;
+  border: 1px solid #86efac;
+  color: #16a34a;
+}
+
+/* ── Score bars ── */
+.dg-bars { display: flex; flex-direction: column; gap: 7px; margin-bottom: 12px; }
+
+.dg-bar-row { display: flex; flex-direction: column; gap: 3px; }
+
+.dg-bar-label {
+  display: flex;
+  justify-content: space-between;
+  font-size: 10px;
+  color: #94a3b8;
+  font-weight: 500;
+}
+.dg-bar-label span:last-child { font-weight: 700; color: #64748b; }
+
+.dg-bar-track {
+  height: 5px;
+  border-radius: 3px;
+  background: #f1f5f9;
+  overflow: hidden;
+}
+
+.dg-bar-fill {
+  height: 100%;
+  border-radius: 3px;
+  width: 0%;
+  /* Transition applied by JS after first paint */
+  transition: width 1.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.dg-bar-fill.fake { background: linear-gradient(90deg, #ef4444, #f97316); }
+.dg-bar-fill.real { background: linear-gradient(90deg, #22c55e, #2A7EFB); }
+
+/* ── Analysis points ── */
+.dg-section-label {
+  font-size: 9.5px;
+  font-weight: 600;
+  color: #cbd5e1;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  margin-bottom: 7px;
+}
+
+.dg-analysis-list { display: flex; flex-direction: column; gap: 5px; }
+
+.dg-analysis-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  font-size: 10.5px;
+  color: #64748b;
+  line-height: 1.4;
+}
+
+.dg-check {
+  width: 14px;
+  height: 14px;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 8px;
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+.dg-check.ok   { background: #dcfce7; color: #16a34a; }
+.dg-check.warn { background: #fee2e2; color: #ef4444; }
+
+/* ── Footer ── */
+.dg-footer-bar {
+  padding: 7px 13px;
+  border-top: 1px solid #f1f5f9;
+  font-size: 9.5px;
+  color: #cbd5e1;
+  background: #f8fafc;
+  font-weight: 500;
+}
+
+/* ── Divider ── */
+.dg-divider {
+  height: 1px;
+  background: #f1f5f9;
+  margin: 12px 0;
+}
+
+/* ── Countdown ── */
+.dg-countdown {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 0;
+}
+.dg-countdown-num {
+  font-size: 48px;
+  font-weight: 800;
+  color: #2A7EFB;
+  line-height: 1;
+  animation: dg-countPulse 1s ease infinite;
+}
+@keyframes dg-countPulse {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50%       { transform: scale(1.06); opacity: 0.85; }
+}
+.dg-countdown-label {
+  font-size: 11.5px;
+  color: #64748b;
+  font-weight: 500;
+  text-align: center;
+}
+
+/* ── Recording ── */
+.dg-recording {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 0;
+}
+.dg-rec-dot {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #ef4444;
+  animation: dg-recPulse 1s ease infinite;
+}
+@keyframes dg-recPulse {
+  0%   { box-shadow: 0 0 0 0 rgba(239,68,68,0.5); }
+  70%  { box-shadow: 0 0 0 10px rgba(239,68,68,0); }
+  100% { box-shadow: 0 0 0 0 rgba(239,68,68,0); }
+}
+.dg-rec-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: #ef4444;
+}
+.dg-rec-time {
+  font-size: 10px;
+  color: #94a3b8;
+  font-weight: 500;
+}
+.dg-rec-bar {
+  width: 90%;
+  height: 4px;
+  border-radius: 2px;
+  background: #fee2e2;
+  overflow: hidden;
+}
+.dg-rec-bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #fca5a5 25%, #ef4444 50%, #fca5a5 75%);
+  background-size: 200% 100%;
+  border-radius: 2px;
+  animation: dg-shimmerMove 1.4s infinite;
+}

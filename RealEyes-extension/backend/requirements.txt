@@ -1,0 +1,17 @@
+fastapi
+uvicorn[standard]
+python-multipart
+Pillow
+numpy
+torch
+torchvision
+torchaudio
+transformers
+timm
+librosa
+soundfile
+opencv-python-headless
+requests
+python-dotenv
+aiofiles
+httpx
