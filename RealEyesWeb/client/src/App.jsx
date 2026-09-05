@@ -4,6 +4,8 @@ import Navbar from './components/Navbar';
 import Footer from './components/Footer';
 import Landing from './pages/Landing';
 import ImageDetect from './pages/ImageDetect';
+import VideoDetect from './pages/VideoDetect';
+import AudioDetect from './pages/AudioDetect';
 import Login from './pages/Login';
 import Signup from './pages/Signup';
 import Pricing from './pages/Pricing';
@@ -34,9 +36,17 @@ function App() {
                 </ProtectedRoute>
               } />
               
-              {/* Placeholder routes for the other nav links */}
-              <Route path="/detect-video" element={<div className="p-20 text-center text-textMuted">Video Detection Module Coming Soon</div>} />
-              <Route path="/detect-audio" element={<div className="p-20 text-center text-textMuted">Audio Detection Module Coming Soon</div>} />
+              <Route path="/detect-video" element={
+                <ProtectedRoute>
+                  <VideoDetect />
+                </ProtectedRoute>
+              } />
+
+              <Route path="/detect-audio" element={
+                <ProtectedRoute>
+                  <AudioDetect />
+                </ProtectedRoute>
+              } />
             </Routes>
           </main>
 

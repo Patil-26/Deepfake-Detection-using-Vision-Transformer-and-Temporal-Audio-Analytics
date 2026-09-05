@@ -1,9 +1,12 @@
 import { useState, useRef, useContext } from 'react';
-import { UploadCloud, Link as LinkIcon, AlertTriangle, ShieldCheck, Settings, Fingerprint, ThumbsUp, ThumbsDown, Zap } from 'lucide-react';
+import { UploadCloud, Link as LinkIcon, AlertTriangle, ShieldCheck, Settings, Fingerprint, ThumbsUp, ThumbsDown, Zap, AlertCircle } from 'lucide-react';
 import clsx from 'clsx';
 import { SubscriptionContext } from '../context/SubscriptionContext';
 import SessionCounter from '../components/SessionCounter';
 import UsageLimitModal from '../components/UsageLimitModal';
+
+const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+const MAX_IMAGE_SIZE_MB = 10;
 
 export default function ImageDetect() {
   const [activeTab, setActiveTab] = useState('upload');
@@ -13,8 +16,22 @@ export default function ImageDetect() {
   const [previewUrl, setPreviewUrl] = useState(null);
   const [urlInput, setUrlInput] = useState('');
   const [showLimitModal, setShowLimitModal] = useState(false);
+  const [errorMessage, setErrorMessage] = useState(null);
   const fileInputRef = useRef(null);
   const { canDetect, consumeSession } = useContext(SubscriptionContext);
+
+  const handleFileSelection = (file) => {
+    setErrorMessage(null);
+    if (!file) return;
+
+    const fileSizeMB = file.size / (1024 * 1024);
+    if (fileSizeMB > MAX_IMAGE_SIZE_MB) {
+      setErrorMessage(`Image exceeds the ${MAX_IMAGE_SIZE_MB}MB size limit (selected file is ${fileSizeMB.toFixed(1)}MB).`);
+      return;
+    }
+
+    startAnalysis(file);
+  };
 
   const startAnalysis = async (file) => {
     // Check session limit before proceeding
@@ -23,6 +40,7 @@ export default function ImageDetect() {
       return;
     }
 
+    setErrorMessage(null);
     if (file) {
       setPreviewUrl(URL.createObjectURL(file));
     } else if (urlInput && activeTab === 'url') {
@@ -44,7 +62,7 @@ export default function ImageDetect() {
 
       const token = localStorage.getItem('token');
       
-      const response = await fetch('http://localhost:5000/api/tools/detect-image', {
+      const response = await fetch(`${API_BASE}/api/tools/detect-image`, {
         method: 'POST',
         headers: {
           ...(token ? { 'Authorization': `Bearer ${token}` } : {})
@@ -53,14 +71,15 @@ export default function ImageDetect() {
       });
 
       if (!response.ok) {
-        throw new Error('Failed to analyze image.');
+        const err = await response.json().catch(() => ({}));
+        throw new Error(err.message || 'Failed to analyze image.');
       }
 
       const data = await response.json();
       setResults(data);
     } catch (err) {
       console.error(err);
-      alert("Error generating forensic analysis.");
+      setErrorMessage(err.message || "Error generating forensic analysis.");
     } finally {
       setAnalyzing(false);
     }
@@ -75,6 +94,22 @@ export default function ImageDetect() {
 
       {/* Usage Limit Modal */}
       <UsageLimitModal isOpen={showLimitModal} onClose={() => setShowLimitModal(false)} />
+
+      {/* Error Alert Banner */}
+      {errorMessage && (
+        <div className="mb-6 p-4 bg-deepRed/10 border border-deepRed/40 rounded-xl flex items-center justify-between text-deepRed text-sm">
+          <div className="flex items-center gap-3">
+            <AlertCircle className="w-5 h-5 flex-shrink-0" />
+            <span>{errorMessage}</span>
+          </div>
+          <button 
+            onClick={() => setErrorMessage(null)} 
+            className="text-textMuted hover:text-white text-xs font-mono px-2 py-1"
+          >
+            DISMISS
+          </button>
+        </div>
+      )}
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
       
@@ -110,7 +145,7 @@ export default function ImageDetect() {
               e.preventDefault(); 
               setIsHovering(false); 
               if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
-                startAnalysis(e.dataTransfer.files[0]);
+                handleFileSelection(e.dataTransfer.files[0]);
               }
             }}
             onClick={() => fileInputRef.current?.click()}
@@ -120,7 +155,7 @@ export default function ImageDetect() {
               ref={fileInputRef} 
               onChange={(e) => {
                 if (e.target.files && e.target.files.length > 0) {
-                  startAnalysis(e.target.files[0]);
+                  handleFileSelection(e.target.files[0]);
                 }
               }}
               accept="image/*"

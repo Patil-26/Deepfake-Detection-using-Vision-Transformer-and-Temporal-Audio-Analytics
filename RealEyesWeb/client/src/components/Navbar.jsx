@@ -12,6 +12,8 @@ export default function Navbar() {
   const navLinks = [
     { name: 'Home', path: '/' },
     { name: 'Image Detect', path: '/detect-image' },
+    { name: 'Video Detect', path: '/detect-video' },
+    { name: 'Audio Detect', path: '/detect-audio' },
     { name: 'Pricing', path: '/pricing' },
   ];
 

@@ -1,0 +1,581 @@
+import { useState, useRef, useContext } from 'react';
+import { 
+  UploadCloud, 
+  AlertTriangle, 
+  ShieldCheck, 
+  Settings, 
+  Fingerprint, 
+  ThumbsUp, 
+  ThumbsDown, 
+  Zap, 
+  Film, 
+  Play, 
+  Pause,
+  Layers, 
+  Clock, 
+  Activity,
+  AlertCircle
+} from 'lucide-react';
+import clsx from 'clsx';
+import { SubscriptionContext } from '../context/SubscriptionContext';
+import SessionCounter from '../components/SessionCounter';
+import UsageLimitModal from '../components/UsageLimitModal';
+
+const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+const MAX_VIDEO_SIZE_MB = 50;
+
+export default function VideoDetect() {
+  const [analyzing, setAnalyzing] = useState(false);
+  const [results, setResults] = useState(null);
+  const [previewUrl, setPreviewUrl] = useState(null);
+  const [isHovering, setIsHovering] = useState(false);
+  const [feedbackStatus, setFeedbackStatus] = useState(null);
+  const [fileName, setFileName] = useState(null);
+  const [fileSizeStr, setFileSizeStr] = useState('');
+  const [showLimitModal, setShowLimitModal] = useState(false);
+  const [errorMessage, setErrorMessage] = useState(null);
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [currentTime, setCurrentTime] = useState(0);
+  const [duration, setDuration] = useState(0);
+  const [activeSegmentIndex, setActiveSegmentIndex] = useState(null);
+
+  const fileInputRef = useRef(null);
+  const videoRef = useRef(null);
+  const { canDetect, consumeSession } = useContext(SubscriptionContext);
+
+  const handleFileSelection = (file) => {
+    setErrorMessage(null);
+    if (!file) return;
+
+    // Validate size (50MB)
+    const fileSizeMB = file.size / (1024 * 1024);
+    if (fileSizeMB > MAX_VIDEO_SIZE_MB) {
+      setErrorMessage(`File exceeds the ${MAX_VIDEO_SIZE_MB}MB size limit (selected file is ${fileSizeMB.toFixed(1)}MB).`);
+      return;
+    }
+
+    startAnalysis(file);
+  };
+
+  const startAnalysis = async (file) => {
+    if (!file) return;
+
+    // Check session limit before proceeding
+    if (!canDetect()) {
+      setShowLimitModal(true);
+      return;
+    }
+
+    const objectUrl = URL.createObjectURL(file);
+    setPreviewUrl(objectUrl);
+    setFileName(file.name);
+    setFileSizeStr(`${(file.size / (1024 * 1024)).toFixed(2)} MB`);
+    setResults(null);
+    setFeedbackStatus(null);
+    setAnalyzing(true);
+    setErrorMessage(null);
+
+    // Consume session
+    consumeSession();
+
+    try {
+      const formData = new FormData();
+      formData.append('video', file);
+
+      const token = localStorage.getItem('token');
+
+      const response = await fetch(`${API_BASE}/api/tools/detect-video`, {
+        method: 'POST',
+        headers: {
+          ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+        },
+        body: formData
+      });
+
+      if (!response.ok) {
+        const err = await response.json().catch(() => ({}));
+        throw new Error(err.message || `Failed to analyze video (Status: ${response.status})`);
+      }
+
+      const data = await response.json();
+      setResults(data);
+    } catch (err) {
+      console.error(err);
+      setErrorMessage(err.message || 'Error occurred while analyzing video stream.');
+    } finally {
+      setAnalyzing(false);
+    }
+  };
+
+  const togglePlay = () => {
+    if (!videoRef.current) return;
+    if (isPlaying) {
+      videoRef.current.pause();
+      setIsPlaying(false);
+    } else {
+      videoRef.current.play();
+      setIsPlaying(true);
+    }
+  };
+
+  const handleTimeUpdate = () => {
+    if (!videoRef.current) return;
+    setCurrentTime(videoRef.current.currentTime);
+  };
+
+  const handleLoadedMetadata = () => {
+    if (!videoRef.current) return;
+    setDuration(videoRef.current.duration || 0);
+  };
+
+  const seekToPercent = (percent) => {
+    if (!videoRef.current || !duration) return;
+    const targetSeconds = (percent / 100) * duration;
+    videoRef.current.currentTime = targetSeconds;
+    setCurrentTime(targetSeconds);
+  };
+
+  const submitFeedback = async (verdict) => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`${API_BASE}/api/tools/feedback`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+        },
+        body: JSON.stringify({
+          hash: results?.hash,
+          aiVerdict: results?.isFake ? 'FAKE' : 'REAL',
+          aiConfidence: results?.score,
+          userVerdict: verdict
+        })
+      });
+      if (response.ok) setFeedbackStatus('success');
+      else setFeedbackStatus('error');
+    } catch {
+      setFeedbackStatus('error');
+    }
+  };
+
+  const formatTime = (seconds) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = Math.floor(seconds % 60);
+    return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+  };
+
+  return (
+    <div className="w-full max-w-7xl mx-auto px-4 py-8">
+      {/* Session Counter */}
+      <div className="mb-6">
+        <SessionCounter />
+      </div>
+
+      {/* Usage Limit Modal */}
+      <UsageLimitModal isOpen={showLimitModal} onClose={() => setShowLimitModal(false)} />
+
+      {/* Error Alert Banner */}
+      {errorMessage && (
+        <div className="mb-6 p-4 bg-deepRed/10 border border-deepRed/40 rounded-xl flex items-center justify-between text-deepRed text-sm">
+          <div className="flex items-center gap-3">
+            <AlertCircle className="w-5 h-5 flex-shrink-0" />
+            <span>{errorMessage}</span>
+          </div>
+          <button 
+            onClick={() => setErrorMessage(null)} 
+            className="text-textMuted hover:text-white text-xs font-mono px-2 py-1"
+          >
+            DISMISS
+          </button>
+        </div>
+      )}
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+
+        {/* Left Column - Upload, Video Player & Interactive Timeline */}
+        <div className="space-y-6">
+
+          {/* Header */}
+          <div className="flex items-center gap-3">
+            <div className="p-2.5 rounded-xl bg-deepRed/15 border border-deepRed/30">
+              <Film className="w-5 h-5 text-deepRed" />
+            </div>
+            <div>
+              <h1 className="text-xl font-display font-bold uppercase tracking-wider">Video Deepfake Studio</h1>
+              <p className="text-xs text-textMuted font-mono">Temporal Frame & Diffusion Inspection</p>
+            </div>
+          </div>
+
+          {/* Upload Zone */}
+          <div
+            className={clsx(
+              "w-full h-44 rounded-xl border-2 border-dashed flex flex-col items-center justify-center cursor-pointer transition-all duration-300",
+              isHovering 
+                ? "border-deepRed bg-deepRed/5 glow-red" 
+                : "border-deepBorder bg-deepCard/70 hover:border-textMuted"
+            )}
+            onDragOver={(e) => { e.preventDefault(); setIsHovering(true); }}
+            onDragLeave={(e) => { e.preventDefault(); setIsHovering(false); }}
+            onDrop={(e) => {
+              e.preventDefault();
+              setIsHovering(false);
+              if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+                handleFileSelection(e.dataTransfer.files[0]);
+              }
+            }}
+            onClick={() => fileInputRef.current?.click()}
+          >
+            <input
+              type="file"
+              ref={fileInputRef}
+              onChange={(e) => {
+                if (e.target.files && e.target.files.length > 0) {
+                  handleFileSelection(e.target.files[0]);
+                }
+              }}
+              accept="video/*"
+              className="hidden"
+            />
+            <UploadCloud className="w-8 h-8 text-textMuted mb-3 group-hover:text-deepRed transition-colors" />
+            <p className="text-sm text-gray-200 font-medium tracking-wide">
+              Drop video clip here or <span className="text-deepRed underline font-semibold">browse file</span>
+            </p>
+            <p className="text-xs text-textMuted mt-1.5 font-mono">
+              MP4 &bull; WEBM &bull; AVI &bull; MOV &bull; Max 50 MB
+            </p>
+          </div>
+
+          {/* Video Player & Frame Scrubbing */}
+          <div className="glass-panel p-4 space-y-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Activity className="w-4 h-4 text-deepRed" />
+                <span className="text-xs text-textMuted uppercase font-mono tracking-wider">Player & Frame Scrub</span>
+              </div>
+              {fileName && (
+                <div className="flex items-center gap-2">
+                  <span className="text-[10px] font-mono text-textMuted bg-deepBase px-2 py-0.5 rounded border border-deepBorder truncate max-w-[150px]">
+                    {fileName}
+                  </span>
+                  <span className="text-[10px] font-mono text-textMuted bg-deepBase px-1.5 py-0.5 rounded border border-deepBorder">
+                    {fileSizeStr}
+                  </span>
+                </div>
+              )}
+            </div>
+
+            {/* Video Viewport */}
+            <div className="w-full aspect-video bg-deepBase rounded-xl overflow-hidden border border-deepBorder relative group">
+              {previewUrl ? (
+                <>
+                  <video
+                    ref={videoRef}
+                    src={previewUrl}
+                    onTimeUpdate={handleTimeUpdate}
+                    onLoadedMetadata={handleLoadedMetadata}
+                    onEnded={() => setIsPlaying(false)}
+                    className="w-full h-full object-contain"
+                  />
+                  {/* Floating Play/Pause Button */}
+                  <button
+                    onClick={togglePlay}
+                    className="absolute bottom-4 left-4 p-2.5 rounded-lg bg-black/70 backdrop-blur-md border border-white/20 text-white hover:bg-black/90 transition-all opacity-80 group-hover:opacity-100"
+                  >
+                    {isPlaying ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4" />}
+                  </button>
+                  <div className="absolute bottom-4 right-4 text-[11px] font-mono text-white/90 bg-black/70 backdrop-blur-md px-2.5 py-1 rounded-md border border-white/20">
+                    {formatTime(currentTime)} / {formatTime(duration)}
+                  </div>
+                </>
+              ) : (
+                <div className="w-full h-full flex flex-col items-center justify-center gap-3">
+                  <Play className="w-10 h-10 text-deepBorder stroke-[1.5]" />
+                  <p className="text-xs text-textMuted font-mono">No video loaded. Upload a file above.</p>
+                </div>
+              )}
+
+              {/* Analyzing Overlay Spinner */}
+              {analyzing && (
+                <div className="absolute inset-0 bg-black/80 backdrop-blur-sm flex flex-col items-center justify-center">
+                  <div className="relative">
+                    <div className="w-14 h-14 rounded-full border-4 border-deepBorder border-t-deepRed animate-spin" />
+                    <Film className="w-6 h-6 text-deepRed absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" />
+                  </div>
+                  <p className="text-xs font-mono text-white tracking-widest uppercase mt-4">Analyzing Temporal Frames...</p>
+                  <p className="text-[10px] text-textMuted mt-1 font-mono">Running Vision Transformer on keyframe segments</p>
+                </div>
+              )}
+            </div>
+
+            {/* 🟢/🔴 Interactive Green/Red Timeline Bar */}
+            <div className="space-y-2 pt-2">
+              <div className="flex items-center justify-between text-[11px] font-mono text-textMuted">
+                <span className="flex items-center gap-1.5">
+                  <Clock className="w-3.5 h-3.5 text-deepRed" /> Interactive Keyframe Timeline
+                </span>
+                <span className="text-[10px]">
+                  <span className="inline-block w-2 h-2 rounded-full bg-deepGreen mr-1" /> Authentic
+                  <span className="inline-block w-2 h-2 rounded-full bg-deepRed mr-1 ml-3" /> Flagged Fake
+                </span>
+              </div>
+
+              {/* Segmented Timeline */}
+              <div className="relative w-full h-7 bg-deepBase rounded-lg overflow-hidden border border-deepBorder flex cursor-pointer p-0.5 gap-0.5">
+                {results?.timelineSegments ? (
+                  results.timelineSegments.map((segment, idx) => (
+                    <div
+                      key={idx}
+                      onClick={() => seekToPercent(segment.startPercent)}
+                      onMouseEnter={() => setActiveSegmentIndex(idx)}
+                      onMouseLeave={() => setActiveSegmentIndex(null)}
+                      title={`${segment.label} (${segment.confidence}%) - Click to scrub`}
+                      className={clsx(
+                        "h-full flex-1 rounded-sm transition-all duration-200 relative",
+                        segment.isFake 
+                          ? "bg-deepRed hover:brightness-125 glow-red" 
+                          : "bg-deepGreen/80 hover:bg-deepGreen glow-green"
+                      )}
+                    />
+                  ))
+                ) : (
+                  // Default empty timeline placeholder
+                  Array.from({ length: 10 }).map((_, i) => (
+                    <div key={i} className="h-full flex-1 bg-deepCard/80 rounded-sm" />
+                  ))
+                )}
+
+                {/* Scrubber indicator based on video current time */}
+                {duration > 0 && (
+                  <div
+                    className="absolute top-0 bottom-0 w-0.5 bg-white shadow-lg pointer-events-none transition-all"
+                    style={{ left: `${(currentTime / duration) * 100}%` }}
+                  />
+                )}
+              </div>
+
+              {/* Active Segment Tooltip Card */}
+              {activeSegmentIndex !== null && results?.timelineSegments && (
+                <div className="p-2 bg-deepBase rounded-md border border-deepBorder text-xs font-mono flex items-center justify-between animate-in fade-in duration-200">
+                  <span className={results.timelineSegments[activeSegmentIndex].isFake ? "text-deepRed font-bold" : "text-deepGreen font-bold"}>
+                    {results.timelineSegments[activeSegmentIndex].label}
+                  </span>
+                  <span className="text-textMuted text-[10px]">
+                    Confidence: {results.timelineSegments[activeSegmentIndex].confidence}% &bull; Click segment to seek
+                  </span>
+                </div>
+              )}
+            </div>
+
+          </div>
+
+          {/* Analysis Pipeline Overview */}
+          <div className="glass-panel p-4 border border-deepBorder">
+            <div className="flex items-center gap-2 text-xs font-mono text-textMuted uppercase tracking-wider mb-3">
+              <Layers className="w-3.5 h-3.5 text-deepRed" /> Pipeline Architecture
+            </div>
+            <div className="grid grid-cols-3 gap-3">
+              <div className="bg-deepBase p-3 rounded-xl border border-deepBorder text-center">
+                <p className="text-lg font-bold text-white font-mono">10</p>
+                <p className="text-[10px] text-textMuted font-mono uppercase">Sampled Frames</p>
+              </div>
+              <div className="bg-deepBase p-3 rounded-xl border border-deepBorder text-center">
+                <p className="text-lg font-bold text-white font-mono">Top-5</p>
+                <p className="text-[10px] text-textMuted font-mono uppercase">Peak Averaged</p>
+              </div>
+              <div className="bg-deepBase p-3 rounded-xl border border-deepBorder text-center">
+                <p className="text-lg font-bold text-white font-mono">SwinV2</p>
+                <p className="text-[10px] text-textMuted font-mono uppercase">Vision Transformer</p>
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+        {/* Right Column - Results Diagnostic Panel */}
+        <div className={clsx("glass-panel p-6 border transition-all duration-500", results ? "border-deepRed" : "border-deepBorder opacity-60")}>
+          {!results && !analyzing && (
+            <div className="h-full min-h-[450px] flex flex-col items-center justify-center text-center space-y-4">
+              <Film className="w-12 h-12 text-deepBorder" />
+              <p className="text-textMuted text-sm font-medium">Upload a video to initiate forensic scan.</p>
+              <p className="text-xs text-textMuted/70 font-mono max-w-sm">
+                The AI extracts sequential keyframes, performs facial boundary and diffusion artifact scoring, and renders interactive timeline segments.
+              </p>
+            </div>
+          )}
+
+          {analyzing && (
+            <div className="h-full min-h-[450px] flex flex-col items-center justify-center text-center space-y-6">
+              <div className="w-16 h-16 rounded-full border-4 border-deepBorder border-t-deepRed animate-spin" />
+              <div className="space-y-2">
+                <p className="text-sm font-mono text-white animate-pulse">Running Frame-by-Frame AI Analysis...</p>
+                <p className="text-xs text-textMuted">Temporal consistency + per-frame anomaly detection</p>
+              </div>
+            </div>
+          )}
+
+          {results && (
+            <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-700">
+
+              {/* Verdict Header */}
+              <div className="flex items-center justify-between pb-4 border-b border-deepBorder">
+                <div className="flex items-center gap-3">
+                  <div className={clsx("p-2.5 rounded-xl border", results.isFake ? "bg-deepRed/15 border-deepRed/30" : "bg-deepGreen/15 border-deepGreen/30")}>
+                    {results.isFake ? <AlertTriangle className="w-6 h-6 text-deepRed" /> : <ShieldCheck className="w-6 h-6 text-deepGreen" />}
+                  </div>
+                  <div>
+                    <span className={clsx("font-display font-bold text-2xl tracking-wider px-3 py-1 rounded-md border inline-block", results.isFake ? "text-deepRed bg-deepRed/10 border-deepRed/30" : "text-deepGreen bg-deepGreen/10 border-deepGreen/30")}>
+                      {results.isFake ? "FAKE" : "REAL"}
+                    </span>
+                    <p className="text-xs text-textMuted font-mono mt-1">
+                      {results.isFake ? "Synthetic media detected" : "Authentic capture confirmed"}
+                    </p>
+                  </div>
+                </div>
+                <div className="text-right">
+                  <span className={clsx("font-mono text-4xl font-bold", results.isFake ? "text-deepRed glow-text-red" : "text-deepGreen glow-text-green")}>
+                    {results.score}%
+                  </span>
+                  <p className="text-[10px] text-textMuted font-mono">CONFIDENCE</p>
+                </div>
+              </div>
+
+              {/* Risk Level Banner */}
+              <div className={clsx("w-full border rounded-xl p-3.5 flex items-center justify-between", results.isFake ? "bg-deepRed/5 border-deepRed/20" : "bg-deepGreen/5 border-deepGreen/20")}>
+                <span className="text-xs text-textMuted font-mono">
+                  {results.isFake 
+                    ? `Risk Level: ${results.riskLevel || 'HIGH'} — Generative artifacts detected` 
+                    : `Risk Level: ${results.riskLevel || 'SAFE'} — Authentic video signature`}
+                </span>
+                <Settings className="w-4 h-4 text-textMuted" />
+              </div>
+
+              {/* Probability Comparison Bars */}
+              <div className="space-y-4">
+                <div>
+                  <div className="flex justify-between text-xs font-mono mb-1.5">
+                    <span className="text-textMuted">Synthetic Probability</span>
+                    <span className="text-deepRed font-bold">{results.isFake ? results.score : 100 - results.score}%</span>
+                  </div>
+                  <div className="w-full h-2 bg-deepBase rounded-full overflow-hidden p-0.5 border border-deepBorder">
+                    <div 
+                      className="h-full bg-deepRed rounded-full glow-red transition-all duration-1000" 
+                      style={{ width: `${results.isFake ? results.score : 100 - results.score}%` }} 
+                    />
+                  </div>
+                </div>
+                <div>
+                  <div className="flex justify-between text-xs font-mono mb-1.5">
+                    <span className="text-textMuted">Authentic Probability</span>
+                    <span className="text-deepGreen font-bold">{results.isFake ? 100 - results.score : results.score}%</span>
+                  </div>
+                  <div className="w-full h-2 bg-deepBase rounded-full overflow-hidden p-0.5 border border-deepBorder">
+                    <div 
+                      className="h-full bg-deepGreen rounded-full glow-green transition-all duration-1000" 
+                      style={{ width: `${results.isFake ? 100 - results.score : results.score}%` }} 
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <hr className="border-deepBorder" />
+
+              {/* Model Breakdown */}
+              <div className="space-y-3">
+                <div className="flex items-center gap-2 text-xs font-mono text-textMuted uppercase tracking-wider">
+                  <Settings className="w-3.5 h-3.5 text-deepRed" /> Neural Model Breakdown
+                </div>
+                <div className="space-y-2 text-sm bg-deepBase/60 p-3 rounded-xl border border-deepBorder">
+                  <div className="flex items-center justify-between">
+                    <span className="text-gray-300 text-xs">Vision Transformer (Per-Frame)</span>
+                    <span className={clsx("font-mono text-xs font-bold", results.isFake ? "text-deepRed" : "text-deepGreen")}>
+                      {results.models?.vision || results.score}%
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-gray-300 text-xs">Temporal Consistency Variance</span>
+                    <span className={clsx("font-mono text-xs font-bold", results.isFake ? "text-deepRed" : "text-deepGreen")}>
+                      {results.models?.temporal || 6}%
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-gray-300 text-xs">Frames Sampled</span>
+                    <span className="font-mono text-xs text-white">{results.framesAnalyzed || 10}</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Forensic Anomaly Bullet Points */}
+              <div className="space-y-3">
+                <div className="flex items-center gap-2 text-xs font-mono text-textMuted uppercase tracking-wider">
+                  <AlertTriangle className="w-3.5 h-3.5 text-deepRed" /> Visual & Temporal Diagnostics
+                </div>
+                <div className="flex flex-col gap-2">
+                  {results.anomalies && results.anomalies.map((anom, i) => (
+                    <div 
+                      key={i} 
+                      className={clsx(
+                        "text-xs p-2.5 rounded-lg border flex items-start gap-2",
+                        results.isFake 
+                          ? "bg-deepRed/10 border-deepRed/30 text-red-300" 
+                          : "bg-deepGreen/10 border-deepGreen/30 text-green-300"
+                      )}
+                    >
+                      <span className="font-mono font-bold">•</span>
+                      <span>{anom}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <hr className="border-deepBorder" />
+
+              {/* Hash & Verification Footprint */}
+              <div className="space-y-2">
+                <div className="flex items-center gap-2 text-xs font-mono text-textMuted uppercase tracking-wider">
+                  <Fingerprint className="w-3.5 h-3.5 text-deepRed" /> Authenticity Hash
+                </div>
+                <p className="text-[10px] font-mono text-textMuted truncate bg-deepBase p-2.5 rounded-lg border border-deepBorder select-all">
+                  {results.hash}
+                </p>
+                <div className="flex items-center gap-2 text-xs text-textMuted font-mono pt-1">
+                  <Zap className="w-3.5 h-3.5 text-yellow-500" /> Latency: {results.time}
+                </div>
+              </div>
+
+              {/* RLHF Feedback */}
+              <div className="pt-2 space-y-2">
+                <div className="text-xs font-mono text-textMuted uppercase tracking-wider">Human Feedback (RLHF)</div>
+                {!feedbackStatus ? (
+                  <div className="flex gap-3">
+                    <button 
+                      onClick={() => submitFeedback('REAL')} 
+                      className="flex-1 py-2 border border-deepBorder rounded-lg flex items-center justify-center gap-2 hover:bg-deepBase hover:text-white transition-all text-xs text-textMuted font-mono"
+                    >
+                      <ThumbsUp className="w-3.5 h-3.5" /> CONFIRM REAL
+                    </button>
+                    <button 
+                      onClick={() => submitFeedback('FAKE')} 
+                      className="flex-1 py-2 border border-deepRed/30 bg-deepRed/5 rounded-lg flex items-center justify-center gap-2 hover:bg-deepRed/20 text-deepRed transition-all text-xs font-mono"
+                    >
+                      <ThumbsDown className="w-3.5 h-3.5" /> FLAG SYNTHETIC
+                    </button>
+                  </div>
+                ) : feedbackStatus === 'success' ? (
+                  <div className="w-full py-2.5 bg-deepGreen/10 border border-deepGreen/30 text-deepGreen rounded-lg text-xs text-center font-mono font-medium">
+                    Feedback recorded for active model refinement.
+                  </div>
+                ) : (
+                  <div className="w-full py-2.5 bg-deepRed/10 border border-deepRed/30 text-deepRed rounded-lg text-xs text-center font-mono text-deepRed">
+                    Failed to record feedback.
+                  </div>
+                )}
+              </div>
+
+            </div>
+          )}
+        </div>
+
+      </div>
+    </div>
+  );
+}
