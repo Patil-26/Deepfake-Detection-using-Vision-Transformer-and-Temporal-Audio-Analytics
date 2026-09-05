@@ -2,13 +2,13 @@ import mongoose from 'mongoose';
 
 const connectDB = async () => {
   try {
-    const conn = await mongoose.connect(process.env.MONGO_URI, {
+    const dbUri = process.env.MONGO_URI || 'mongodb+srv://atharvappatil2005_db_user:7mJIYPhDz1IVrErj@cluster0.h3gohlv.mongodb.net/deepguard?retryWrites=true&w=majority&appName=Cluster0';
+    const conn = await mongoose.connect(dbUri, {
       family: 4
     });
     console.log(`MongoDB Connected: ${conn.connection.host}`);
   } catch (error) {
-    console.error(`Error: ${error.message}`);
-    process.exit(1);
+    console.error(`[Mongoose Connection Error]: ${error.message}`);
   }
 };
 

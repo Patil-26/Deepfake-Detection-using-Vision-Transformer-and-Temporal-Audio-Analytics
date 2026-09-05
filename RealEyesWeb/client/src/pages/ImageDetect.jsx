@@ -5,7 +5,7 @@ import { SubscriptionContext } from '../context/SubscriptionContext';
 import SessionCounter from '../components/SessionCounter';
 import UsageLimitModal from '../components/UsageLimitModal';
 
-const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:5001';
 const MAX_IMAGE_SIZE_MB = 10;
 
 export default function ImageDetect() {

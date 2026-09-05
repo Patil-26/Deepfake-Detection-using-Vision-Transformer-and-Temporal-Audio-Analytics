@@ -29,8 +29,19 @@ app.get('/', (req, res) => {
   res.send('Deepguard API is running...');
 });
 
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.PORT || 5001;
 
-app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
+const server = app.listen(PORT, () => {
+  console.log(`Deepguard Backend Server running on port ${PORT}`);
+});
+
+server.on('error', (err) => {
+  if (err.code === 'EADDRINUSE') {
+    console.warn(`Port ${PORT} in use, attempting port 5002...`);
+    app.listen(5002, () => {
+      console.log('Deepguard Backend Server running on port 5002');
+    });
+  } else {
+    console.error('Server error:', err);
+  }
 });
