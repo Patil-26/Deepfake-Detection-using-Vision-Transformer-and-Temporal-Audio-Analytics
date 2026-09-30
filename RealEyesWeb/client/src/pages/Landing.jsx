@@ -49,7 +49,7 @@ export default function Landing() {
           </div>
 
           <h1 className="text-7xl md:text-8xl font-display font-bold uppercase tracking-tight mb-4 drop-shadow-2xl">
-            Deepguard <span className="text-deepGreen glow-text-green">AI</span>
+            RealEyes <span className="text-deepGreen glow-text-green">AI</span>
           </h1>
           
           <p className="text-3xl text-textMuted font-light mb-8">

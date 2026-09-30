@@ -55,7 +55,7 @@ export default function Login() {
             <Fingerprint className="w-8 h-8 text-deepRed animate-pulse" />
           </div>
           <h2 className="text-2xl font-display font-bold">Access Terminals</h2>
-          <p className="text-textMuted text-sm mt-1">Authenticate to use Deepguard AI tools.</p>
+          <p className="text-textMuted text-sm mt-1">Authenticate to use RealEyes AI tools.</p>
         </div>
 
         <div className="w-full mb-6 flex justify-center">
@@ -101,7 +101,7 @@ export default function Login() {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   className="w-full bg-deepBase border border-deepBorder rounded-lg px-4 py-3 text-white focus:outline-none focus:border-deepRed/50 focus:glow-red transition-all"
-                  placeholder="agent@deepguard.ai"
+                  placeholder="agent@realeyes.ai"
                   required
                 />
               </div>
@@ -131,7 +131,7 @@ export default function Login() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 className="w-full bg-deepBase border border-deepBorder rounded-lg px-4 py-3 text-white focus:outline-none focus:border-deepRed/50 focus:glow-red transition-all"
-                placeholder="agent@deepguard.ai"
+                placeholder="agent@realeyes.ai"
                 required
               />
             </div>

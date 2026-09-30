@@ -56,7 +56,7 @@ export default function Pricing() {
     //   key: 'rzp_test_...',
     //   amount: 89900, // ₹899 in paise
     //   currency: 'INR',
-    //   name: 'Deepguard AI',
+    //   name: 'RealEyes AI',
     //   description: 'Premium Plan',
     //   handler: (response) => {
     //     upgradePlan('premium');

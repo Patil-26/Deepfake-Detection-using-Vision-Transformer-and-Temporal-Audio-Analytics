@@ -21,3 +21,10 @@ env/
 # IDE
 .idea/
 .vscode/
+
+# Model checkpoints and datasets
+trained_models/
+*.zip
+*.safetensors
+*.bin
+test_student_teacher.py

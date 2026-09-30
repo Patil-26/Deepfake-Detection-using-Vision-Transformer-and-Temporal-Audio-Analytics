@@ -17,7 +17,7 @@ export default function Footer() {
                 <Shield className="w-5 h-5 text-deepRed" />
               </div>
               <span className="font-display font-bold uppercase tracking-wider text-xl">
-                Deepguard <span className="text-white">AI</span>
+                RealEyes <span className="text-white">AI</span>
               </span>
             </Link>
             <p className="text-sm text-textMuted max-w-sm leading-relaxed">
@@ -58,7 +58,7 @@ export default function Footer() {
         </div>
 
         <div className="w-full flex flex-col md:flex-row items-center justify-between border-t border-deepBorder/50 mt-12 pt-8 text-xs text-textMuted font-mono">
-          <p>&copy; {new Date().getFullYear()} Deepguard Foundation. All system protocols operational.</p>
+          <p>&copy; {new Date().getFullYear()} RealEyes Foundation. All system protocols operational.</p>
           <div className="flex gap-4 mt-4 md:mt-0">
             <span className="hover:text-white cursor-pointer">Privacy Policy</span>
             <span className="hover:text-white cursor-pointer">Terms of Service</span>

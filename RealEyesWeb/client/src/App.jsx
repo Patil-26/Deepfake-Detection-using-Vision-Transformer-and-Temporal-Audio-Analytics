@@ -25,28 +25,19 @@ function App() {
           <main className="flex-1">
             <Routes>
               <Route path="/" element={<Landing />} />
+              
+              {/* Authentication routes - commented out for direct access
               <Route path="/login" element={<Login />} />
               <Route path="/signup" element={<Signup />} />
+              */}
+              
+              <Route path="/pricing" element={<Pricing />} />
               <Route path="/upgrade" element={<Pricing />} />
               
-              {/* Protected Core Tools */}
-              <Route path="/detect-image" element={
-                <ProtectedRoute>
-                  <ImageDetect />
-                </ProtectedRoute>
-              } />
-              
-              <Route path="/detect-video" element={
-                <ProtectedRoute>
-                  <VideoDetect />
-                </ProtectedRoute>
-              } />
-
-              <Route path="/detect-audio" element={
-                <ProtectedRoute>
-                  <AudioDetect />
-                </ProtectedRoute>
-              } />
+              {/* Direct Access Core Tools (Auth bypassed) */}
+              <Route path="/detect-image" element={<ImageDetect />} />
+              <Route path="/detect-video" element={<VideoDetect />} />
+              <Route path="/detect-audio" element={<AudioDetect />} />
             </Routes>
           </main>
 

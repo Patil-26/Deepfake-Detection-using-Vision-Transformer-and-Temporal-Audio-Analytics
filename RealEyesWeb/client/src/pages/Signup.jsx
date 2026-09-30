@@ -89,7 +89,7 @@ export default function Signup() {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               className="w-full bg-deepBase border border-deepBorder rounded-lg px-4 py-3 text-white focus:outline-none focus:border-deepGreen/50 focus:glow-green transition-all"
-              placeholder="agent@deepguard.ai"
+              placeholder="agent@realeyes.ai"
               required
             />
           </div>

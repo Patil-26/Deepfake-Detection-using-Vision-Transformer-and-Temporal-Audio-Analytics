@@ -26,20 +26,20 @@ app.use('/api/subscription', subscriptionRoutes);
 
 // Basic route
 app.get('/', (req, res) => {
-  res.send('Deepguard API is running...');
+  res.send('RealEyes API is running...');
 });
 
 const PORT = process.env.PORT || 5001;
 
 const server = app.listen(PORT, () => {
-  console.log(`Deepguard Backend Server running on port ${PORT}`);
+  console.log(`RealEyes Backend Server running on port ${PORT}`);
 });
 
 server.on('error', (err) => {
   if (err.code === 'EADDRINUSE') {
     console.warn(`Port ${PORT} in use, attempting port 5002...`);
     app.listen(5002, () => {
-      console.log('Deepguard Backend Server running on port 5002');
+      console.log('RealEyes Backend Server running on port 5002');
     });
   } else {
     console.error('Server error:', err);

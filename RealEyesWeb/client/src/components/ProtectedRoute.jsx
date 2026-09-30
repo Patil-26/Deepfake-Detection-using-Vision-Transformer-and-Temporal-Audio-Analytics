@@ -3,6 +3,8 @@ import { Navigate } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext';
 
 export default function ProtectedRoute({ children }) {
+  /*
+  // Auth check commented out for direct access
   const { token, loading } = useContext(AuthContext);
 
   if (loading) {
@@ -12,6 +14,7 @@ export default function ProtectedRoute({ children }) {
   if (!token) {
     return <Navigate to="/login" replace />;
   }
+  */
 
   return children;
 }

@@ -293,7 +293,7 @@ export default function ImageDetect() {
               </div>
               
               <div className="flex items-center justify-between text-sm">
-                <span className="text-gray-300">Deepguard Vision AI</span>
+                <span className="text-gray-300">RealEyes Vision AI</span>
                 <div className="flex items-center gap-3">
                   <div className="w-24 h-1 bg-deepBase rounded-full overflow-hidden flex justify-end">
                     <div className={clsx("h-full", results.isFake ? "bg-deepRed" : "bg-deepGreen")} style={{ width: `${results.models?.vision || results.score}%` }} />

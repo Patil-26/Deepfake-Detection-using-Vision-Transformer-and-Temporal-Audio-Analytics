@@ -31,7 +31,7 @@ export default function Navbar() {
           <Shield className="w-5 h-5 text-deepRed" />
         </div>
         <span className="font-display font-bold text-xl tracking-wider uppercase text-white group-hover:glow-text-red transition-all duration-300">
-          Deepguard <span className="text-deepRed">AI</span>
+          RealEyes <span className="text-deepRed">AI</span>
         </span>
       </Link>
 
@@ -56,7 +56,8 @@ export default function Navbar() {
         })}
       </div>
 
-      {/* Auth Actions */}
+      {/* Auth Actions - Commented out for direct access without login */}
+      {/* 
       <div className="flex items-center gap-3">
         {user ? (
           <>
@@ -82,6 +83,16 @@ export default function Navbar() {
             </Link>
           </>
         )}
+      </div>
+      */}
+      <div className="flex items-center gap-3">
+        <Link 
+          to="/detect-image" 
+          className="flex items-center gap-2 px-5 py-2.5 bg-deepCard border border-deepRed/60 rounded-lg text-deepRed text-sm font-semibold hover:bg-deepRed hover:text-white hover:glow-red transition-all duration-300 group shadow-[0_0_15px_rgba(255,59,48,0.15)]"
+        >
+          <Zap className="w-4 h-4 fill-deepRed group-hover:fill-white group-hover:animate-pulse" />
+          START DETECTING
+        </Link>
       </div>
 
     </nav>
